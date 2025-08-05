@@ -3197,5 +3197,359 @@ g.dfs('D');
 console.log("\n\nBreadth First Search starting from vertex D:");
 g.bfs('D');
 
-# Javascript Version
-````
+//Javascript Version
+```
+
+### Cycles in Graphs
+
+![alt text](image-67.png)
+
+### Cycle Detection
+
+>It is important to be able to detect cycles in Graphs because cycles can indicate problems or special conditions in many applications like networking, scheduling, and circuit design.
+
+#### The two most common ways to detect cycles are:
+
+1. ***Depth First Search (DFS)***: DFS traversal explores the Graph and marks vertices as visited. A cycle is detected when the current vertex has an adjacent vertex that has already been visited.
+
+2. ***Union-Find***: This works by initially defining each vertex as a group, or a subset. Then these groups are joined for every edge. Whenever a new edge is explored, a cycle is detected if two vertices already belong to the same group.
+
+### DFS Cycle Detection for Undirected Graphs
+
+>To detect cycles in an undirected Graph using Depth First Search (DFS), we use a code very similar to the DFS traversal code on the previous page, with just a few changes.
+
+![alt text](image-68.png)
+
+>The DFS traversal starts in vertex A because that is the first vertex in the adjacency matrix. Then, for every new vertex visited, the traversal method is called recursively on all adjacent vertices that have not been visited yet. The cycle is detected when vertex F is visited, and it is discovered that the adjacent vertex C has already been visited.
+
+```JS
+class Graph {
+    constructor(size) {
+        this.size = size;
+        this.adjMatrix = Array.from({ length: size }, () => Array(size).fill(0));
+        this.vertexData = Array(size).fill('');
+    }
+
+    addEdge(u, v) {
+        if (u >= 0 && u < this.size && v >= 0 && v < this.size) {
+            this.adjMatrix[u][v] = 1;
+            this.adjMatrix[v][u] = 1;
+        }
+    }
+
+    addVertexData(vertex, data) {
+        if (vertex >= 0 && vertex < this.size) {
+            this.vertexData[vertex] = data;
+        }
+    }
+
+    printGraph() {
+        console.log("Adjacency Matrix:");
+        this.adjMatrix.forEach(row => {
+            console.log(row.join(' '));
+        });
+
+        console.log("\nVertex Data:");
+        this.vertexData.forEach((data, vertex) => {
+            console.log(`Vertex ${vertex}: ${data}`);
+        });
+    }
+
+    dfsUtil(v, visited, parent) {
+        visited[v] = true;
+
+        for (let i = 0; i < this.size; i++) {
+            if (this.adjMatrix[v][i] === 1) {
+                if (!visited[i]) {
+                    if (this.dfsUtil(i, visited, v)) {
+                        return true;
+                    }
+                } else if (i !== parent) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    isCyclic() {
+        const visited = Array(this.size).fill(false);
+        for (let i = 0; i < this.size; i++) {
+            if (!visited[i]) {
+                if (this.dfsUtil(i, visited, -1)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+}
+
+// Usage
+const g = new Graph(7);
+
+g.addVertexData(0, 'A');
+g.addVertexData(1, 'B');
+g.addVertexData(2, 'C');
+g.addVertexData(3, 'D');
+g.addVertexData(4, 'E');
+g.addVertexData(5, 'F');
+g.addVertexData(6, 'G');
+
+g.addEdge(3, 0);  // D - A
+g.addEdge(0, 2);  // A - C
+g.addEdge(0, 3);  // A - D
+g.addEdge(0, 4);  // A - E
+g.addEdge(4, 2);  // E - C
+g.addEdge(2, 5);  // C - F
+g.addEdge(2, 1);  // C - B
+g.addEdge(2, 6);  // C - G
+g.addEdge(1, 5);  // B - F
+
+g.printGraph();
+
+console.log("\nGraph has cycle:", g.isCyclic());
+
+```
+
+![alt text](image-69.png)
+
+
+### DFS Cycle Detection for Directed Graphs
+
+>To detect cycles in Graphs that are directed, the algorithm is still very similar as for undirected Graphs, but the code must be modified a little bit because for a directed Graph, if we come to an adjacent node that has already been visited, it does not necessarily mean that there is a cycle.
+
+![alt text](image-70.png)
+
+![alt text](image-71.png)
+
+```JS
+class Graph {
+    constructor(size) {
+        this.size = size;
+        this.adjMatrix = Array.from({ length: size }, () => Array(size).fill(0));
+        this.vertexData = Array(size).fill('');
+    }
+
+    addEdge(u, v) {
+        if (u >= 0 && u < this.size && v >= 0 && v < this.size) {
+            this.adjMatrix[u][v] = 1; // Directed edge
+        }
+    }
+
+    addVertexData(vertex, data) {
+        if (vertex >= 0 && vertex < this.size) {
+            this.vertexData[vertex] = data;
+        }
+    }
+
+    printGraph() {
+        console.log("Adjacency Matrix:");
+        this.adjMatrix.forEach(row => {
+            console.log(row.join(' '));
+        });
+
+        console.log("\nVertex Data:");
+        this.vertexData.forEach((data, vertex) => {
+            console.log(`Vertex ${vertex}: ${data}`);
+        });
+    }
+
+    dfsUtil(v, visited, recStack) {
+        visited[v] = true;
+        recStack[v] = true;
+        console.log("Current vertex:", this.vertexData[v]);
+
+        for (let i = 0; i < this.size; i++) {
+            if (this.adjMatrix[v][i] === 1) {
+                if (!visited[i]) {
+                    if (this.dfsUtil(i, visited, recStack)) {
+                        return true;
+                    }
+                } else if (recStack[i]) {
+                    return true;
+                }
+            }
+        }
+
+        recStack[v] = false;
+        return false;
+    }
+
+    isCyclic() {
+        const visited = Array(this.size).fill(false);
+        const recStack = Array(this.size).fill(false);
+
+        for (let i = 0; i < this.size; i++) {
+            if (!visited[i]) {
+                console.log(); // New line
+                if (this.dfsUtil(i, visited, recStack)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+}
+
+// Usage
+const g = new Graph(7);
+
+g.addVertexData(0, 'A');
+g.addVertexData(1, 'B');
+g.addVertexData(2, 'C');
+g.addVertexData(3, 'D');
+g.addVertexData(4, 'E');
+g.addVertexData(5, 'F');
+g.addVertexData(6, 'G');
+
+g.addEdge(3, 0);  // D -> A
+g.addEdge(0, 2);  // A -> C
+g.addEdge(2, 1);  // C -> B
+g.addEdge(2, 4);  // C -> E
+g.addEdge(1, 5);  // B -> F
+g.addEdge(4, 0);  // E -> A
+g.addEdge(2, 6);  // C -> G
+
+g.printGraph();
+
+console.log("\nGraph has cycle:", g.isCyclic());
+
+```
+![alt text](image-72.png)
+
+### Union-Find Cycle Detection
+
+>Detecting cycles using Union-Find is very different from using Depth First Search.
+
+![alt text](image-73.png)
+
+```JS
+class Graph {
+    constructor(size) {
+        this.adjMatrix = Array.from({ length: size }, () => Array(size).fill(0));
+        this.size = size;
+        this.vertexData = Array(size).fill('');
+        this.parent = Array.from({ length: size }, (_, i) => i); // Union-Find array
+    }
+
+    addEdge(u, v) {
+        if (u >= 0 && u < this.size && v >= 0 && v < this.size) {
+            this.adjMatrix[u][v] = 1;
+            this.adjMatrix[v][u] = 1;
+        }
+    }
+
+    addVertexData(vertex, data) {
+        if (vertex >= 0 && vertex < this.size) {
+            this.vertexData[vertex] = data;
+        }
+    }
+
+    find(i) {
+        if (this.parent[i] === i) {
+            return i;
+        }
+        return this.find(this.parent[i]);
+    }
+
+    union(x, y) {
+        const xRoot = this.find(x);
+        const yRoot = this.find(y);
+        console.log('Union:', this.vertexData[x], '+', this.vertexData[y]);
+        this.parent[xRoot] = yRoot;
+        console.log(this.parent, '\n');
+    }
+
+    isCyclic() {
+        for (let i = 0; i < this.size; i++) {
+            for (let j = i + 1; j < this.size; j++) {
+                if (this.adjMatrix[i][j]) {
+                    const x = this.find(i);
+                    const y = this.find(j);
+                    if (x === y) {
+                        return true;
+                    }
+                    this.union(x, y);
+                }
+            }
+        }
+        return false;
+    }
+}
+
+// Usage
+const g = new Graph(7);
+
+g.addVertexData(0, 'A');
+g.addVertexData(1, 'B');
+g.addVertexData(2, 'C');
+g.addVertexData(3, 'D');
+g.addVertexData(4, 'E');
+g.addVertexData(5, 'F');
+g.addVertexData(6, 'G');
+
+g.addEdge(1, 0);  // B - A
+g.addEdge(0, 3);  // A - D
+g.addEdge(0, 2);  // A - C
+g.addEdge(2, 3);  // C - D
+g.addEdge(3, 4);  // D - E
+g.addEdge(3, 5);  // D - F
+g.addEdge(3, 6);  // D - G
+g.addEdge(4, 5);  // E - F
+
+console.log("Graph has cycle:", g.isCyclic());
+
+```
+
+![alt text](image-74.png)
+
+# DSA Shortest Path
+
+### The Shortest Path Problem
+
+![alt text](image-75.png)
+
+### Solutions to The Shortest Path Problem
+
+![alt text](image-76.png)
+
+### Positive and Negative Edge Weights
+
+>Some algorithms that find the shortest paths, like Dijkstra's algorithm, can only find the shortest paths in graphs where all the edges are positive. Such graphs with positive distances are also the easiest to understand because we can think of the edges between vertices as distances between locations.
+
+![alt text](image-77.png)
+
+>If we interpret the edge weights as money lost by going from one vertex to another, a positive edge weight of 4 from vertex A to C in the graph above means that we must spend $4 to go from A to C.
+
+>But graphs can also have negative edges, and for such graphs the ***Bellman-Ford algorithm*** can be used to find the shortest paths.
+
+![alt text](image-78.png)
+
+>And similarly, if the edge weights represent money lost, the negative edge weight -3 from vertex C to A in the graph above can be understood as an edge where there is more money to be made than money lost by going from C to A. So if for example the cost of fuel is $5 going from C to A, and we get paid $8 for picking up packages in C and delivering them in A, money lost is -3, meaning we are actually earning $3 in total.
+
+### Negative Cycles in Shortest Path Problems
+
+![alt text](image-79.png)
+
+## Dijkstra's Algorithm
+
+Dijkstra's shortest path algorithm was invented in 1956 by the Dutch computer scientist Edsger W. Dijkstra during a twenty minutes coffee break, while out shopping with his fiancée in Amsterdam.
+
+The reason for inventing the algorithm was to test a new computer called ARMAC.
+
+### **Dijkstra's Algorithm**
+
+Dijkstra's algorithm finds the shortest path from one vertex to all other vertices.
+
+It does so by repeatedly selecting the nearest unvisited vertex and calculating the distance to all the unvisited neighboring vertices.
+
+![alt text](image-80.png)
+
+Dijkstra's algorithm is often considered to be the most straightforward algorithm for solving the shortest path problem.
+
+Dijkstra's algorithm is used for solving single-source shortest path problems for directed or undirected paths. Single-source means that one vertex is chosen to be the start, and the algorithm will find the shortest path from that vertex to all other vertices.
+
+Dijkstra's algorithm does not work for graphs with negative edges. For graphs with negative edges, the Bellman-Ford algorithm that is described on the next page, can be used instead.
+
+To find the shortest path, Dijkstra's algorithm needs to know which vertex is the source, it needs a way to mark vertices as visited, and it needs an overview of the current shortest distance to each vertex as it works its way through the graph, updating these distances when a shorter distance is found.
